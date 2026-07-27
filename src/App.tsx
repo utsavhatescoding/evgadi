@@ -260,13 +260,12 @@ function VehicleVisual({ vehicle }: { vehicle: Vehicle }) {
 }
 
 function MarketVehicleVisual({ vehicle }: { vehicle: MarketVehicle }) {
+  const bundledImage = `/vehicles/${vehicle.id}.jpg`;
   return (
     <>
       <div className="vehicle-placeholder"><span>{vehicle.brand.slice(0, 2).toUpperCase()}</span><small>{vehicle.brand}</small></div>
-      {vehicle.image && (
-        <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`} loading="lazy"
-          onError={(event) => { event.currentTarget.style.display = "none"; }} />
-      )}
+      <img src={bundledImage} alt={`${vehicle.brand} ${vehicle.model}`} loading="eager"
+        onError={(event) => { event.currentTarget.style.display = "none"; }} />
     </>
   );
 }
