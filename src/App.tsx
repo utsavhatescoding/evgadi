@@ -7,6 +7,7 @@ import {
   saveRecommendationSession,
   submitBuyerEnquiry,
 } from "./supabase";
+import { marketVehicles, type MarketVehicle } from "./marketVehicles";
 
 type Answers = {
   budget: number;
@@ -258,6 +259,18 @@ function VehicleVisual({ vehicle }: { vehicle: Vehicle }) {
   );
 }
 
+function MarketVehicleVisual({ vehicle }: { vehicle: MarketVehicle }) {
+  return (
+    <>
+      <div className="vehicle-placeholder"><span>{vehicle.brand.slice(0, 2).toUpperCase()}</span><small>{vehicle.brand}</small></div>
+      {vehicle.image && (
+        <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`} loading="lazy"
+          onError={(event) => { event.currentTarget.style.display = "none"; }} />
+      )}
+    </>
+  );
+}
+
 function calculateMatches(answers: Answers, vehicleData: Vehicle[]): Match[] {
   const rangeTarget = answers.longestTrip * 1.3;
   const clearanceTarget = answers.roads === "Mostly paved" ? 150 : answers.roads === "Mixed roads" ? 170 : 190;
@@ -338,16 +351,16 @@ export default function Home() {
   const matches = useMemo(() => calculateMatches(answers, vehicleData), [answers, vehicleData]);
   const shortlist = matches.filter((item) => item.eligible).slice(0, 3);
   const catalogBrands = useMemo(
-    () => ["All brands", ...Array.from(new Set(vehicleData.map((item) => item.brand))).sort()],
-    [vehicleData],
+    () => ["All brands", ...Array.from(new Set(marketVehicles.map((item) => item.brand))).sort()],
+    [],
   );
   const catalogVehicles = useMemo(() => {
     const query = catalogSearch.trim().toLowerCase();
-    return vehicleData.filter((item) =>
+    return marketVehicles.filter((item) =>
       (catalogBrand === "All brands" || item.brand === catalogBrand) &&
-      (!query || `${item.brand} ${item.model} ${item.variant}`.toLowerCase().includes(query)),
+      (!query || `${item.brand} ${item.model} ${item.variants || ""}`.toLowerCase().includes(query)),
     );
-  }, [catalogBrand, catalogSearch, vehicleData]);
+  }, [catalogBrand, catalogSearch]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -411,17 +424,15 @@ export default function Home() {
 
   return (
     <main>
-      <div className="demo-bar">
-        <span>{catalogMode === "live" ? "Live catalog" : "Research preview"}</span>
-        {catalogMode === "live"
-          ? "Vehicle records are loaded from the verified database."
-          : "Vehicle information is being verified. Results are not purchase recommendations."}
+      <div className="market-bar">
+        <span>नेपालको EV बजार, स्पष्ट रूपमा</span>
+        <div><b>{marketVehicles.length}+</b> models tracked <i /> Updated July 2026</div>
       </div>
       <header className="site-header">
         <div className="shell header-inner">
-          <a className="brand" href="#" aria-label="EV Match Nepal home">
+          <a className="brand" href="#" aria-label="EV Gadi home">
             <LogoMark />
-            <span>EV Match Nepal</span>
+            <span>EV Gadi</span>
           </a>
           <nav aria-label="Primary navigation">
             <a href="#ev-catalogue">EV catalogue</a>
@@ -436,50 +447,50 @@ export default function Home() {
         <div className="hero-glow" aria-hidden="true" />
         <div className="shell hero-grid">
           <div className="hero-copy">
-            <div className="eyebrow"><Icon name="bolt" /> Nepal EV decision desk · 2026</div>
-            <h1>Find the electric car that fits your real life.</h1>
+            <div className="eyebrow"><Icon name="bolt" /> Nepal&apos;s independent EV buying guide</div>
+            <h1>Your next EV, chosen with confidence.</h1>
             <p className="hero-lead">
-              From Kathmandu traffic and Tarai heat to hill roads and long highway journeys:
-              shortlist an EV around the way Nepal actually moves.
+              Explore every major electric car available in Nepal, compare what matters,
+              and get a shortlist shaped around your budget, roads and daily life.
             </p>
             <div className="hero-actions">
               <button className="primary-cta" type="button" onClick={scrollToMatcher}>
-                <span>Start my EV match</span>
+                <span>Find my best EV</span>
                 <span className="button-icon"><Icon name="arrow" /></span>
               </button>
               <span className="time-note"><Icon name="clock" /> About 2 minutes</span>
             </div>
             <div className="trust-row">
-              <div><Icon name="shield" /><span>Evidence shown clearly</span></div>
-              <div><Icon name="check" /><span>Hard limits respected</span></div>
-              <div><Icon name="pin" /><span>Built for Nepal</span></div>
+              <div><Icon name="shield" /><span>Independent guidance</span></div>
+              <div><Icon name="check" /><span>Current Nepal prices</span></div>
+              <div><Icon name="pin" /><span>Local road reality</span></div>
             </div>
             <div className="nepal-cities" aria-label="Initial Nepal coverage">
               काठमाडौं · विराटनगर · पोखरा · भरतपुर · बुटवल
             </div>
           </div>
 
-          <div className="decision-preview" aria-label="Example EV decision report">
+          <div className="decision-preview product-preview" aria-label="EV Gadi market overview">
             <div className="preview-top">
-              <span>EV MATCH / DECISION INDEX</span>
-              <span className="preview-badge">NEPAL</span>
+              <span>EV GADI / MARKET PULSE</span>
+              <span className="preview-badge">LIVE</span>
             </div>
-            <div className="editorial-number">03</div>
-            <p className="editorial-caption">shortlisted vehicles, ranked around one buyer profile</p>
+            <div className="editorial-number">{marketVehicles.length}+</div>
+            <p className="editorial-caption">electric passenger models tracked across Nepal</p>
             <div className="preview-card featured">
               <span className="rank">01</span>
-              <div><small>Best fit</small><strong>Reasoned shortlist</strong></div>
-              <span className="score">/100</span>
+              <div><small>Starting from</small><strong>Rs 16.49 lakh</strong></div>
+              <span className="score">2026</span>
             </div>
             <div className="preview-card">
               <span className="preview-icon"><Icon name="check" /></span>
-              <div><strong>Why it fits</strong><small>Budget, travel, roads and service</small></div>
+              <div><strong>One clean catalogue</strong><small>Prices, variants and segments</small></div>
             </div>
             <div className="preview-card warning">
-              <span className="preview-icon"><Icon name="alert" /></span>
-              <div><strong>What to verify</strong><small>Unknown facts stay visible</small></div>
+              <span className="preview-icon"><Icon name="shield" /></span>
+              <div><strong>Decision-first matching</strong><small>Built around your real usage</small></div>
             </div>
-            <p>Independent logic · transparent cautions · no paid ranking</p>
+            <p>No paid ranking · transparent sources · made for Nepal</p>
           </div>
         </div>
       </section>
@@ -488,10 +499,10 @@ export default function Home() {
         <div className="shell">
           <div className="catalogue-heading">
             <div>
-              <p className="section-kicker">Nepal EV catalogue</p>
-              <h2>Electric cars currently tracked for Nepal.</h2>
+              <p className="section-kicker">Explore electric cars</p>
+              <h2>The Nepal EV market, in one place.</h2>
             </div>
-            <p>Prices and specifications are tied to a source. A missing fact remains missing until it is confirmed.</p>
+            <p>Browse current passenger EVs by brand and price. Shortlist first; verify the final offer with the authorised distributor.</p>
           </div>
           <div className="catalogue-tools">
             <input
@@ -509,28 +520,28 @@ export default function Home() {
             {catalogVehicles.map((vehicle) => (
               <article className="catalogue-card" key={vehicle.id}>
                 <div className="vehicle-photo">
-                  <VehicleVisual vehicle={vehicle} />
-                  <span>{vehicle.bodyType || "Electric passenger vehicle"}</span>
+                  <MarketVehicleVisual vehicle={vehicle} />
+                  <span>{vehicle.segment}</span>
                 </div>
                 <div className="catalogue-card-body">
                   <p>{vehicle.brand}</p>
                   <h3>{vehicle.model}</h3>
-                  <small>{vehicle.variant}</small>
+                  <small>{vehicle.variants || `${vehicle.segment} · Nepal market`}</small>
                   <strong>Rs {(vehicle.price / 100000).toFixed(2)} lakh</strong>
                   <div className="catalogue-specs">
-                    <span><b>{vehicle.battery}</b> kWh</span>
-                    <span><b>{vehicle.range}</b> km {vehicle.rangeStandard}</span>
-                    <span><b>{vehicle.seats}</b> seats</span>
+                    <span><b>{vehicle.segment}</b> segment</span>
+                    <span><b>Electric</b> powertrain</span>
+                    <span><b>Nepal</b> market</span>
                   </div>
                   <div className="source-line">
-                    <span>{vehicle.verifiedAt ? `Checked ${new Date(vehicle.verifiedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : "Verification pending"}</span>
-                    {vehicle.sourceUrl && <a href={vehicle.sourceUrl} target="_blank" rel="noreferrer">Source ↗</a>}
+                    <span>Indicative starting price</span>
+                    <button type="button" onClick={scrollToMatcher}>Check my fit →</button>
                   </div>
                 </div>
               </article>
             ))}
           </div>
-          <p className="catalogue-note">Catalogue scope: officially marketed electric passenger cars and SUVs. Commercial vehicles, two-wheelers, grey imports and discontinued models are excluded.</p>
+          <p className="catalogue-note">Scope: currently listed electric passenger cars, SUVs, MPVs and pickups in Nepal. Zero-price upcoming models, commercial vehicles, two-wheelers and discontinued listings are excluded.</p>
         </div>
       </section>
 
@@ -753,7 +764,7 @@ export default function Home() {
 
       <footer>
         <div className="shell footer-inner">
-          <a className="brand footer-brand" href="#"><LogoMark /><span>EV Match Nepal</span></a>
+          <a className="brand footer-brand" href="#"><LogoMark /><span>EV Gadi</span></a>
           <p>Independent EV buying assistance for Nepal.</p>
           <span>{isSupabaseConfigured ? "Database connected · Enquiries active" : "Research prototype · Database setup ready"}</span>
         </div>
@@ -774,7 +785,7 @@ export default function Home() {
                   <label>Name<input required name="name" autoComplete="name" placeholder="Your name" /></label>
                   <label>Phone or WhatsApp<input required name="phone" autoComplete="tel" type="tel" pattern="[0-9+ -]{7,15}" placeholder="98XXXXXXXX" /></label>
                   <label>Purchase timing<select name="purchase_timing" defaultValue="1–3 months"><option>Within 30 days</option><option>1–3 months</option><option>3–6 months</option><option>Just researching</option></select></label>
-                  <label className="consent-line"><input required type="checkbox" /> I agree that EV Match Nepal may use these details to respond to this enquiry.</label>
+                  <label className="consent-line"><input required type="checkbox" /> I agree that EV Gadi may use these details to respond to this enquiry.</label>
                   {leadError && <p className="form-error" role="alert">{leadError}</p>}
                   <button className="continue-button" disabled={submitting} type="submit">
                     {submitting ? "Saving request…" : isSupabaseConfigured ? "Submit my enquiry" : "Preview my request"} <Icon name="arrow" />
