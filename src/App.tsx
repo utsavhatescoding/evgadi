@@ -261,11 +261,22 @@ function VehicleVisual({ vehicle }: { vehicle: Vehicle }) {
 
 function MarketVehicleVisual({ vehicle }: { vehicle: MarketVehicle }) {
   const bundledImage = `/vehicles/${vehicle.id}.jpg`;
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <>
-      <div className="vehicle-placeholder"><span>{vehicle.brand.slice(0, 2).toUpperCase()}</span><small>{vehicle.brand}</small></div>
-      <img src={bundledImage} alt={`${vehicle.brand} ${vehicle.model}`} loading="eager"
-        onError={(event) => { event.currentTarget.style.display = "none"; }} />
+      {!loaded && <div className="vehicle-skeleton" aria-hidden="true" />}
+      {failed && <div className="vehicle-fallback"><span>{vehicle.brand}</span><small>Image verification pending</small></div>}
+      {!failed && (
+        <img
+          className={loaded ? "loaded" : ""}
+          src={bundledImage}
+          alt={`${vehicle.brand} ${vehicle.model}`}
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => { setFailed(true); setLoaded(true); }}
+        />
+      )}
     </>
   );
 }
@@ -345,6 +356,7 @@ export default function Home() {
   const [catalogMode, setCatalogMode] = useState<"live" | "pilot">("pilot");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogBrand, setCatalogBrand] = useState("All brands");
+  const [selectedMarketVehicle, setSelectedMarketVehicle] = useState<MarketVehicle | null>(null);
   const matcherRef = useRef<HTMLElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const matches = useMemo(() => calculateMatches(answers, vehicleData), [answers, vehicleData]);
@@ -534,7 +546,7 @@ export default function Home() {
                   </div>
                   <div className="source-line">
                     <span>Indicative starting price</span>
-                    <button type="button" onClick={scrollToMatcher}>Check my fit →</button>
+                    <button type="button" onClick={() => setSelectedMarketVehicle(vehicle)}>View details →</button>
                   </div>
                 </div>
               </article>
@@ -801,6 +813,44 @@ export default function Home() {
                 <button className="secondary-button" type="button" onClick={() => setLeadOpen(false)}>Close</button>
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {selectedMarketVehicle && (
+        <div className="modal-backdrop vehicle-detail-backdrop" role="presentation" onMouseDown={() => setSelectedMarketVehicle(null)}>
+          <section className="vehicle-detail-modal" role="dialog" aria-modal="true" aria-labelledby="vehicle-detail-title"
+            onMouseDown={(event) => event.stopPropagation()}>
+            <button className="modal-close" type="button" onClick={() => setSelectedMarketVehicle(null)} aria-label="Close">×</button>
+            <div className="detail-visual">
+              <MarketVehicleVisual vehicle={selectedMarketVehicle} />
+              <span>{selectedMarketVehicle.segment}</span>
+            </div>
+            <div className="detail-content">
+              <p className="detail-brand">{selectedMarketVehicle.brand}</p>
+              <h2 id="vehicle-detail-title">{selectedMarketVehicle.model}</h2>
+              <p className="detail-variant">{selectedMarketVehicle.variants || `${selectedMarketVehicle.segment} · Nepal market`}</p>
+              <div className="detail-price"><small>Indicative starting price</small><strong>Rs {(selectedMarketVehicle.price / 100000).toFixed(2)} lakh</strong></div>
+              <div className="detail-facts">
+                <div><small>Body style</small><strong>{selectedMarketVehicle.segment}</strong></div>
+                <div><small>Powertrain</small><strong>Battery electric</strong></div>
+                <div><small>Market</small><strong>Nepal</strong></div>
+              </div>
+              <div className="detail-evidence">
+                <Icon name="shield" />
+                <div><strong>Specification verification in progress</strong><span>Battery, range, charging, warranty and ground-clearance facts will appear only after source verification.</span></div>
+              </div>
+              <div className="detail-actions">
+                <button className="primary-cta" type="button" onClick={() => {
+                  setSelectedVehicle(`${selectedMarketVehicle.brand} ${selectedMarketVehicle.model}`);
+                  setSelectedMarketVehicle(null);
+                  setLeadOpen(true);
+                  setLeadSent(false);
+                }}>Request a dealer offer <Icon name="arrow" /></button>
+                <button className="secondary-button" type="button" onClick={() => { setSelectedMarketVehicle(null); scrollToMatcher(); }}>Check whether it fits me</button>
+              </div>
+              <p className="detail-disclaimer">Confirm the latest price, stock, warranty and specifications with the authorised Nepal distributor before purchase.</p>
+            </div>
           </section>
         </div>
       )}
